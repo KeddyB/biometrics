@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateAuthenticationOptions } from '@simplewebauthn/server';
 import { getUser, saveUser } from '@/lib/user';
+import { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 
 export async function POST(req: NextRequest) {
   const { username } = await req.json();

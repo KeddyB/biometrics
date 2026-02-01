@@ -1,8 +1,8 @@
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 
 export interface Authenticator {
-  id: Buffer;
-  publicKey: Buffer;
+  id: string;
+  publicKey: Uint8Array;
   counter: number;
   transports: AuthenticatorTransportFuture[];
 }

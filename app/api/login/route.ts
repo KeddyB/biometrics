@@ -24,16 +24,24 @@ export async function POST(req: NextRequest) {
   }
 
   const authenticator = user.authenticators ? user.authenticators.find(
-    auth => auth.id.toString('base64url') === data.id
+    auth => auth.id === data.id
   ) : undefined;
 
   if (!authenticator) {
     return NextResponse.json({ error: 'Authenticator not found' }, { status: 404 });
   }
 
+  if (!authenticator) {
+    return NextResponse.json({ error: 'Authenticator not found' }, { status: 404 });
+  }
+
+
+
+
+
   const credential = {
     ...authenticator,
-    publicKey: authenticator.publicKey,
+    publicKey: authenticator.publicKey.slice(),
   };
 
   let verification: VerifiedAuthenticationResponse;

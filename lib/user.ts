@@ -15,11 +15,8 @@ export async function getUser(username: string): Promise<User | null> {
 
   if (data && data.authenticators) {
     data.authenticators.forEach((auth: any) => {
-      if (auth.id && auth.id.type === 'Buffer') {
-        auth.id = Buffer.from(auth.id.data);
-      }
-      if (auth.publicKey && auth.publicKey.type === 'Buffer') {
-        auth.publicKey = Buffer.from(auth.publicKey.data);
+      if (auth.publicKey && typeof auth.publicKey === 'object') {
+        auth.publicKey = new Uint8Array(Object.values(auth.publicKey));
       }
     });
   }

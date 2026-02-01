@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import type { VerifiedRegistrationResponse } from '@simplewebauthn/server';
 import { getUser, saveUser } from '@/lib/user';
-import type { Authenticator } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -40,11 +39,11 @@ export async function POST(req: NextRequest) {
   const { verified, registrationInfo } = verification;
 
   if (verified && registrationInfo) {
-    const { credentialID, credentialPublicKey, counter } = registrationInfo;
-    const newAuthenticator: Authenticator = {
-      id: credentialID,
-      publicKey: credentialPublicKey,
-      counter,
+    const { credential } = registrationInfo;
+    const newAuthenticator = {
+      id: credential.id,
+      publicKey: credential.publicKey,
+      counter: credential.counter,
       transports: data.response.transports || [],
     };
     if (!user.authenticators) {
