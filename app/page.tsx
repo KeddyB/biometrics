@@ -28,18 +28,10 @@ export default function AuthPage() {
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: new Uint8Array(32), // Should be a random challenge from the server
-          rp: { name: "Gemini CLI" },
-          user: {
-            id: new Uint8Array(16),
-            name: "user@gemini.com",
-            displayName: "User",
-          },
-          pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-          authenticatorSelection: {
-            authenticatorAttachment: "platform",
-            userVerification: "required",
-            requireResidentKey: true,
-          },
+          rpId: window.location.hostname,
+
+
+
           timeout: 60000,
         },
       });
