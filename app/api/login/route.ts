@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing username or data' }, { status: 400 });
   }
 
-  const user = getUser(username);
+  const user = await getUser(username);
 
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No challenge found for user' }, { status: 400 });
   }
 
-  const authenticator = user.authenticators.find(
-    auth => auth.id === data.id
-  );
+  const authenticator = user.authenticators ? user.authenticators.find(
+    auth => auth.id.toString('base64url') === data.id
+  ) : undefined;
 
   if (!authenticator) {
     return NextResponse.json({ error: 'Authenticator not found' }, { status: 404 });
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   const credential = {
     ...authenticator,
-    publicKey: new Uint8Array(authenticator.publicKey),
+    publicKey: authenticator.publicKey,
   };
 
   let verification: VerifiedAuthenticationResponse;
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       expectedChallenge,
       expectedOrigin: new URL(req.url).origin,
       expectedRPID: new URL(req.url).hostname,
-      credential: credential,
+      credential,
     });
   } catch (error) {
     console.error(error);
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const { newCounter } = authenticationInfo;
     authenticator.counter = newCounter;
     user.currentChallenge = undefined;
-    saveUser(user);
+    await saveUser(user);
   }
 
   return NextResponse.json({ verified });

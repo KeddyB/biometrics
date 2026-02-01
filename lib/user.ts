@@ -1,67 +1,59 @@
-import { Authenticator } from './types';
-import * as fs from 'fs';
-import * as path from 'path';
+import { supabase } from './supabase';
+import type { User } from './types';
 
-interface User {
-  id: string;
-  username: string;
-  authenticators: Authenticator[];
-  currentChallenge?: string;
-}
+export async function getUser(username: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', username)
+    .single();
 
-const usersPath = path.join(process.cwd(), 'lib', 'users.json');
-
-function readUsers(): Map<string, User> {
-  console.log('Reading users...');
-  try {
-    const data = fs.readFileSync(usersPath, 'utf-8');
-    const users: Map<string, User> = new Map(Object.entries(JSON.parse(data)));
-    
-    // Convert publicKey from a plain object back to a Buffer
-    for (const user of users.values()) {
-      user.authenticators.forEach(auth => {
-        if (auth.publicKey && (auth.publicKey as any).type === 'Buffer' && Array.isArray((auth.publicKey as any).data)) {
-          auth.publicKey = Buffer.from((auth.publicKey as any).data);
-        }
-      });
-    }
-    
-    return users;
-  } catch (error) {
-    return new Map();
+  if (error) {
+    console.error('Error getting user:', error);
+    return null;
   }
+
+  if (data && data.authenticators) {
+    data.authenticators.forEach((auth: any) => {
+      if (auth.id && auth.id.type === 'Buffer') {
+        auth.id = Buffer.from(auth.id.data);
+      }
+      if (auth.publicKey && auth.publicKey.type === 'Buffer') {
+        auth.publicKey = Buffer.from(auth.publicKey.data);
+      }
+    });
+  }
+
+  return data;
 }
 
-function writeUsers(users: Map<string, User>) {
-    console.log('Writing users...');
-    const usersObject = Array.from(users.entries()).reduce((obj, [key, value]) => {
-      obj[key] = value;
-      return obj;
-    }, {} as { [key: string]: User });
-  
-    fs.writeFileSync(usersPath, JSON.stringify(usersObject, null, 2), 'utf-8');
-}
-  
+export async function createUser(username: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{ username, id: `user_${Date.now()}` }])
+    .select()
+    .single();
 
-export function getUser(username: string): User | undefined {
-  const users = readUsers();
-  return users.get(username);
-}
+  if (error) {
+    console.error('Error creating user:', error);
+    return null;
+  }
 
-export function createUser(username:string): User {
-    const users = readUsers();
-    const user: User = {
-        id: `user_${Date.now()}`,
-        username,
-        authenticators: [],
-    }
-    users.set(username, user)
-    writeUsers(users)
-    return user
+  return data;
 }
 
-export function saveUser(user: User) {
-    const users = readUsers();
-    users.set(user.username, user);
-    writeUsers(users);
+export async function saveUser(user: User): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .update(user)
+    .eq('id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving user:', error);
+    return null;
+  }
+
+  return data;
 }

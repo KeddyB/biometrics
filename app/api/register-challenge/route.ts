@@ -9,7 +9,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Username is required' }, { status: 400 });
   }
 
-  let user = getUser(username) || createUser(username);
+  let user = await getUser(username);
+  if (!user) {
+    user = await createUser(username);
+  }
+
+  if (!user) {
+    return NextResponse.json({ error: 'Could not create or find user' }, { status: 500 });
+  }
 
   const options = await generateRegistrationOptions({
     rpName: 'Gemini Biometrics Demo',
@@ -17,15 +24,15 @@ export async function POST(req: NextRequest) {
     userID: Buffer.from(user.id, 'utf-8'),
     userName: user.username,
     attestationType: 'none',
-    excludeCredentials: user.authenticators.map(auth => ({
+    excludeCredentials: user.authenticators ? user.authenticators.map(auth => ({
       id: auth.id,
       type: 'public-key',
       transports: auth.transports,
-    })),
+    })) : [],
   });
 
   user.currentChallenge = options.challenge;
-  saveUser(user);
+  await saveUser(user);
 
   return NextResponse.json(options);
 }
